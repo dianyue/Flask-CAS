@@ -5,7 +5,7 @@ from .cas_urls import create_cas_logout_url
 from .cas_urls import create_cas_validate_url
 
 import json
-
+import logging
 try:
     from urllib import urlopen
 except ImportError:
@@ -14,8 +14,25 @@ except ImportError:
 blueprint = flask.Blueprint('cas', __name__)
 
 
-@blueprint.route('/login/')
+@blueprint.route('/login/', methods=('GET', 'POST'))
 def login():
+    from xml.etree import ElementTree
+    '''
+    for POST method handle logout req
+    '''
+    if flask.request.method == "POST":
+        data = flask.request.values
+        logreq = data.get('logoutRequest')
+        tree = ElementTree.fromstring(logreq)
+        for node in tree:
+            if not node.tag.endswith("SessionIndex"): continue
+            ticket = node.text
+            cb = current_app.config['CAS_LOGOUT_CALLBACK']
+            logging.info("ticket %s cb %s" %(ticket, cb==None))
+            if cb:
+                cb(ticket)
+        return flask.render_template('cas_result.html')  
+
     """
     This route has two purposes. First, it is used by the user
     to login. Second, it is used by the CAS to respond with the
@@ -57,14 +74,14 @@ def login():
             #cas_username_session_key = current_app.config['CAS_USERNAME_SESSION_KEY']
             #cas_attributes_session_key = current_app.config['CAS_ATTRIBUTES_SESSION_KEY']
             if store_func:
-                store_func(flask.request, flask.session)
+                store_func(flask.request, flask.session, flask.session[cas_token_session_key])
         else:
             r['status'] = 'error'
             del flask.session[cas_token_session_key]
-
+  
         if isjson:
             if store_func:
-                store_func(flask.request, flask.session)
+                store_func(flask.request, flask.session, flask.session[cas_token_session_key])
             return json.dumps(r)
 
     current_app.logger.debug('Redirecting to: {}, {}'.format(redirect_url, flask.session))

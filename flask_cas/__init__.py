@@ -53,7 +53,9 @@ class CAS(object):
         app.config.setdefault('CAS_ATTRIBUTES_SESSION_KEY', 'CAS_ATTRIBUTES')
         app.config.setdefault('CAS_ROUTE_PREFIX', 'cas')
         app.config.setdefault('CAS_LOGOUT_RETURN_URL', None)
+        app.config.setdefault('CAS_USER_TOKEN_KEY', 'user_ticket')
         app.config.setdefault('CAS_SAVE_INFO_CALLBACK', None)
+        app.config.setdefault('CAS_LOGOUT_CALLBACK', None)
         app.config.setdefault('CAS_VERSION', '1')
         # Register Blueprint
         app.register_blueprint(routing.blueprint, url_prefix=url_prefix)
